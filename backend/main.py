@@ -56,7 +56,14 @@ def chat_endpoint(request: ChatRequest):
         res = process_chat(request.session_id, request.message)
         return ChatResponse(**res)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        if "Incorrect API key" in error_msg or "401" in error_msg:
+            return ChatResponse(
+                response="System Error: Incorrect or missing OpenAI API Key. Please replace 'sk-dummy_key_please_replace_with_actual_key' in backend/.env with your actual OpenAI API key.",
+                requires_payment=False,
+                payment_link=None
+            )
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.post("/api/policy/evaluate", response_model=PolicyEvaluateResponse)
 def policy_evaluate_endpoint(request: PolicyEvaluateRequest, db: Session = Depends(get_db)):
